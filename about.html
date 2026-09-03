@@ -1,776 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 AASCD Survey Interactive Dashboard</title>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg-primary: #f8fafc;
-            --bg-card: #ffffff;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --accent-blue: #2563eb;
-            --accent-blue-hover: #1d4ed8;
-            --accent-blue-light: #eff6ff;
-            --accent-teal: #0d9488;
-            --accent-purple: #8b5cf6;
-            --border-color: #e2e8f0;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            padding: 24px;
-            line-height: 1.5;
-        }
-
-        .dashboard-container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            margin-bottom: 24px;
-        }
-
-        .header h1 {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-        }
-
-        .header p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        /* Tabs Navigation */
-        .tabs-nav {
-            display: flex;
-            gap: 8px;
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 24px;
-            overflow-x: auto;
-        }
-
-        .tab-button {
-            padding: 12px 20px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            background: none;
-            border: none;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            margin-bottom: -2px;
-        }
-
-        .tab-button:hover {
-            color: var(--accent-blue);
-            background-color: var(--accent-blue-light);
-            border-radius: 6px 6px 0 0;
-        }
-
-        .tab-button.active {
-            color: var(--accent-blue);
-            border-bottom-color: var(--accent-blue);
-        }
-
-        /* Tab Content Panels */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Grid Layouts */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .kpi-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: var(--shadow-sm);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .kpi-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .kpi-title {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-secondary);
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .kpi-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--accent-blue);
-            margin-bottom: 4px;
-        }
-
-        .kpi-subtext {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        @media (max-width: 1024px) {
-            .grid-2, .grid-3 { grid-template-columns: 1fr; }
-        }
-
-        .card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .chart-container {
-            position: relative;
-            flex-grow: 1;
-            min-height: 320px;
-            width: 100%;
-        }
-
-        /* Filter Controls */
-        .filter-controls {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-            background-color: var(--bg-card);
-            padding: 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        .filter-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .select-input {
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            background-color: #fff;
-            font-size: 0.9rem;
-            color: var(--text-primary);
-            outline: none;
-            cursor: pointer;
-        }
-
-        /* Data Tables */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-            text-align: left;
-        }
-
-        .data-table th, .data-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .data-table th {
-            background-color: var(--accent-blue-light);
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .data-table tr:hover {
-            background-color: #f8fafc;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .badge-success { background-color: #d1fae5; color: #065f46; }
-        .badge-info { background-color: #e0f2fe; color: #075985; }
-        .badge-warning { background-color: #fef3c7; color: #92400e; }
-
-        .insight-card {
-            background-color: var(--accent-blue-light);
-            border: 1px solid #bfdbfe;
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 16px;
-            font-size: 0.9rem;
-            color: #1e40af;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AASCD Test Administrator Survey Interactive Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .tab-btn.active {
+      background-color: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+    .tab-btn.active .badge {
+      background-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+  </style>
 </head>
-<body>
+<body class="p-4 sm:p-6 lg:p-8 text-slate-800 min-h-screen flex flex-col justify-between">
 
-    <div class="dashboard-container">
-        <div class="header">
-            <h1>2026 AASCD Test Administrator Survey Interactive Dashboard</h1>
-            <p>Comprehensive quantitative evaluation based on 302 educator responses.</p>
+  <div class="max-w-7xl mx-auto w-full space-y-6">
+    <!-- Header Banner -->
+    <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-800 relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-semibold rounded-full border border-blue-400/30 uppercase tracking-wider">
+              2025–2026 Assessment Cycle
+            </span>
+            <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-full border border-emerald-400/30 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Simplified Headers Applied
+            </span>
+          </div>
+          <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
+            Quant 2026 AASCD Test Administrator Survey
+          </h1>
+          <p class="text-slate-300 text-sm sm:text-base mt-1 max-w-2xl">
+            Streamlined metrics dashboard with simplified question titles and complete underlying prompt details.
+          </p>
         </div>
+      </div>
+    </header>
 
-        <!-- Navigation Tabs -->
-        <div class="tabs-nav">
-            <button class="tab-button active" onclick="switchTab('overview')">Executive Overview</button>
-            <button class="tab-button" onclick="switchTab('training')">Training & Resources</button>
-            <button class="tab-button" onclick="switchTab('decision-tool')">Decision-Making Tool</button>
-            <button class="tab-button" onclick="switchTab('usability')">System Usability & Tasks</button>
-            <button class="tab-button" onclick="switchTab('accommodations')">Tools & Accommodations</button>
+    <!-- Key Metrics KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-4 hover:border-blue-300 transition-all">
+        <div class="p-3.5 bg-blue-50 text-blue-600 rounded-2xl">
+          <i class="fa-solid fa-users text-2xl"></i>
         </div>
-
-        <!-- TAB 1: EXECUTIVE OVERVIEW -->
-        <div id="overview" class="tab-content active">
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-title">Total Respondents</div>
-                    <div class="kpi-value">302</div>
-                    <div class="kpi-subtext">76.8% Teachers / Test Admin</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Training Satisfaction</div>
-                    <div class="kpi-value">4.21 / 5</div>
-                    <div class="kpi-subtext">79.4% rated preparation 4 or 5</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Online vs. Paper</div>
-                    <div class="kpi-value">53.4%</div>
-                    <div class="kpi-subtext">Prefer online over paper</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Decision Tool Support</div>
-                    <div class="kpi-value">97.0%</div>
-                    <div class="kpi-subtext">Determines eligibility effectively</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Test Security Maintenance</div>
-                    <div class="kpi-value">90.4%</div>
-                    <div class="kpi-subtext">Rated task as easy to maintain</div>
-                </div>
-            </div>
-
-            <div class="grid-2">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Respondent Role Distribution</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="overviewRoleChart"></canvas>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Core Task Performance Highlights (% Rated Easy)</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="overviewTaskChart"></canvas>
-                    </div>
-                </div>
-            </div>
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Respondents</p>
+          <p class="text-2xl font-extrabold text-slate-900 mt-0.5">302</p>
         </div>
+      </div>
 
-        <!-- TAB 2: TRAINING & RESOURCES -->
-        <div id="training" class="tab-content">
-            <div class="grid-2">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Training Preparedness Ratings (Scale 1–5)</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="trainingRatingChart"></canvas>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Primary Information Channels</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="infoChannelsChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Resource Usefulness & Clarity Evaluation</div>
-                </div>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Resource / Guide</th>
-                            <th>Very Useful & Clear</th>
-                            <th>Neutral</th>
-                            <th>Not Useful</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>TA Certification Course</td>
-                            <td>60.9% (157)</td>
-                            <td>34.9% (90)</td>
-                            <td>4.3% (11)</td>
-                            <td><span class="badge badge-success">Top Rated</span></td>
-                        </tr>
-                        <tr>
-                            <td>TA Practice Site</td>
-                            <td>56.6% (138)</td>
-                            <td>39.3% (96)</td>
-                            <td>4.1% (10)</td>
-                            <td><span class="badge badge-success">High Clarity</span></td>
-                        </tr>
-                        <tr>
-                            <td>TA User Guide</td>
-                            <td>56.2% (146)</td>
-                            <td>40.0% (104)</td>
-                            <td>3.8% (10)</td>
-                            <td><span class="badge badge-success">High Clarity</span></td>
-                        </tr>
-                        <tr>
-                            <td>AASCD Test Administration Manual</td>
-                            <td>52.5% (138)</td>
-                            <td>42.2% (111)</td>
-                            <td>5.3% (14)</td>
-                            <td><span class="badge badge-info">Good</span></td>
-                        </tr>
-                        <tr>
-                            <td>Student Practice Site</td>
-                            <td>50.6% (118)</td>
-                            <td>45.1% (105)</td>
-                            <td>4.3% (10)</td>
-                            <td><span class="badge badge-info">Good</span></td>
-                        </tr>
-                        <tr>
-                            <td>Response Entry User Guide</td>
-                            <td>48.5% (115)</td>
-                            <td>46.8% (111)</td>
-                            <td>4.6% (11)</td>
-                            <td><span class="badge badge-info">Good</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-4 hover:border-indigo-300 transition-all">
+        <div class="p-3.5 bg-indigo-50 text-indigo-600 rounded-2xl">
+          <i class="fa-solid fa-clipboard-question text-2xl"></i>
         </div>
-
-        <!-- TAB 3: DECISION-MAKING TOOL -->
-        <div id="decision-tool" class="tab-content">
-            <div class="card" style="margin-bottom: 24px;">
-                <div class="card-header">
-                    <div class="card-title">Decision-Making Tool Agreement Profile</div>
-                </div>
-                <div class="chart-container" style="min-height: 380px;">
-                    <canvas id="dmtChart"></canvas>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Detailed Agreement Breakdown</div>
-                </div>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Tool Statement</th>
-                            <th>Strongly Agree</th>
-                            <th>Agree</th>
-                            <th>Disagree</th>
-                            <th>Strongly Disagree</th>
-                            <th>Total Agreement</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Used by IEP teams to determine student eligibility</td>
-                            <td>74.8%</td>
-                            <td>22.3%</td>
-                            <td>1.7%</td>
-                            <td>1.3%</td>
-                            <td><span class="badge badge-success">97.0%</span></td>
-                        </tr>
-                        <tr>
-                            <td>Helps teams to focus on required criteria</td>
-                            <td>47.8%</td>
-                            <td>36.9%</td>
-                            <td>8.0%</td>
-                            <td>7.3%</td>
-                            <td><span class="badge badge-success">84.7%</span></td>
-                        </tr>
-                        <tr>
-                            <td>Parts and questions are clear and easily understood</td>
-                            <td>31.1%</td>
-                            <td>42.5%</td>
-                            <td>15.7%</td>
-                            <td>10.7%</td>
-                            <td><span class="badge badge-info">73.6%</span></td>
-                        </tr>
-                        <tr>
-                            <td>Ensures alignment between supports for instruction & assessment</td>
-                            <td>36.2%</td>
-                            <td>32.6%</td>
-                            <td>17.3%</td>
-                            <td>14.0%</td>
-                            <td><span class="badge badge-warning">68.8%</span></td>
-                        </tr>
-                        <tr>
-                            <td>Annual evaluation assures student is taught & assessed appropriately</td>
-                            <td>33.4%</td>
-                            <td>33.1%</td>
-                            <td>18.5%</td>
-                            <td>14.9%</td>
-                            <td><span class="badge badge-warning">66.6%</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Questions Analyzed</p>
+          <p class="text-2xl font-extrabold text-slate-900 mt-0.5">66</p>
         </div>
+      </div>
 
-        <!-- TAB 4: SYSTEM USABILITY & TASKS -->
-        <div id="usability" class="tab-content">
-            <div class="grid-2">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Ease of Administering Tasks</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="usabilityTasksChart"></canvas>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Online vs. Full Paper Comparison</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="paperVsOnlineChart"></canvas>
-                    </div>
-                    <div class="insight-card">
-                        <strong>Key Takeaway:</strong> Over 53% of users find the online system distinctly easier than traditional paper testing, while less than 7% prefer paper testing.
-                    </div>
-                </div>
-            </div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-4 hover:border-emerald-300 transition-all">
+        <div class="p-3.5 bg-emerald-50 text-emerald-600 rounded-2xl">
+          <i class="fa-solid fa-layer-group text-2xl"></i>
         </div>
-
-        <!-- TAB 5: TOOLS & ACCOMMODATIONS -->
-        <div id="accommodations" class="tab-content">
-            <div class="filter-controls">
-                <span class="filter-label">Filter View:</span>
-                <select id="toolMetricSelect" class="select-input" onchange="updateToolsChart()">
-                    <option value="frequent">Access Frequency (% Frequently Used)</option>
-                    <option value="quality">Tool Quality (% High Quality)</option>
-                </select>
-            </div>
-
-            <div class="grid-2">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title" id="toolsChartTitle">Embedded Accessibility Tools Analysis</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="interactiveToolsChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Student Interface Independence & AT Usage</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="studentIndependenceChart"></canvas>
-                    </div>
-                    <div class="insight-card">
-                        <strong>Accommodation Insight:</strong> 54.7% of students utilized Assistive Technology (AT) devices during testing, whereas non-embedded accommodations (e.g., tactile graphics) were used by only 9.0%.
-                    </div>
-                </div>
-            </div>
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Thematic Categories</p>
+          <p class="text-2xl font-extrabold text-slate-900 mt-0.5">9</p>
         </div>
+      </div>
 
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-4 hover:border-amber-300 transition-all">
+        <div class="p-3.5 bg-amber-50 text-amber-600 rounded-2xl">
+          <i class="fa-solid fa-file-excel text-2xl"></i>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Data Source</p>
+          <p class="text-sm font-bold text-slate-800 mt-1 truncate max-w-[150px]">Quant 2026 AASCD Survey</p>
+        </div>
+      </div>
     </div>
 
-    <script>
-        // Tab Switching Logic
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    <!-- Search & Filter Controls -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div class="relative w-full md:w-96">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Search question title or keyword..." 
+          class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+          onkeyup="handleSearch()"
+        >
+      </div>
+      <div class="text-xs text-slate-500 font-medium flex items-center gap-2 self-start md:self-auto">
+        <span id="showingCount" class="font-bold text-slate-800">Showing 66 questions</span>
+      </div>
+    </div>
 
-            event.currentTarget.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
+    <!-- Thematic Category Navigation Tabs -->
+    <div class="overflow-x-auto custom-scrollbar pb-2">
+      <div id="tabsContainer" class="flex items-center gap-2 min-w-max">
+        <button 
+          onclick="switchTab('all')" 
+          id="tab-all" 
+          class="tab-btn active px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 bg-white hover:bg-slate-50 transition-all flex items-center gap-2 cursor-pointer"
+        >
+          <span>All Questions</span>
+          <span class="badge px-2 py-0.5 text-xs rounded-md bg-slate-100 text-slate-600 font-bold">66</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Questions Dashboard Grid -->
+    <main id="dashboardGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[400px]"></main>
+
+    <!-- Empty Search State -->
+    <div id="noResults" class="hidden bg-white p-12 text-center rounded-2xl border border-slate-200 space-y-3">
+      <i class="fa-solid fa-face-frown text-4xl text-slate-300"></i>
+      <h3 class="text-lg font-bold text-slate-700">No Matching Questions Found</h3>
+      <p class="text-sm text-slate-500">Try adjusting your search criteria or select another category tab.</p>
+    </div>
+  </div>
+
+  <footer class="mt-12 text-center text-xs text-slate-400 py-4">
+    AASCD Quantitative Survey Data Dashboard &bull; Generated directly from source dataset
+  </footer>
+
+  <script>
+    const categoriesData = [{"cat_id": "role", "cat_name": "Respondent Roles", "questions": [{"q_num": 1, "col_idx": 2, "short_title": "Role / Position", "full_question": "Which of the following best describes your role during the administration of the AASCD?", "cat_name": "Respondent Roles", "cat_id": "role", "total_answered": 302, "options": [{"label": "Teacher or Test Administrator", "count": 232, "pct": 76.8}, {"label": "District test coordinator or district administrator", "count": 55, "pct": 18.2}, {"label": "Building test coordinator", "count": 6, "pct": 2.0}, {"label": "Reporting-only user (district or building-level)", "count": 4, "pct": 1.3}, {"label": "School psychologist (did not administer)", "count": 1, "pct": 0.3}, {"label": "Interventionist that will be giving the test next year and had to do 5 decision making tools this year", "count": 1, "pct": 0.3}, {"label": "Did not have a student qualified for this type of Assessment", "count": 1, "pct": 0.3}, {"label": "Other", "count": 1, "pct": 0.3}, {"label": "Speech-Language Pathologist", "count": 1, "pct": 0.3}]}]}, {"cat_id": "dmt", "cat_name": "Decision-Making Tool", "questions": [{"q_num": 2, "col_idx": 3, "short_title": "DMT: Used for Student Eligibility", "full_question": "Please indicate your level of agreement with each of the following: The Decision-Making Tool was used by IEP teams to determine student eligibility and participation in the AASCD.", "cat_name": "Decision-Making Tool", "cat_id": "dmt", "total_answered": 302, "options": [{"label": "Strongly Agree", "count": 225, "pct": 74.5}, {"label": "Agree", "count": 67, "pct": 22.2}, {"label": "Disagree", "count": 5, "pct": 1.7}, {"label": "Strongly Disagree", "count": 4, "pct": 1.3}, {"label": "No Response / Skipped", "count": 1, "pct": 0.3}]}, {"q_num": 3, "col_idx": 4, "short_title": "DMT: Focuses Teams on Criteria", "full_question": "Please indicate your level of agreement with each of the following:\u00a0 The Decision-Making Tool helps teams to focus on required criteria.", "cat_name": "Decision-Making Tool", "cat_id": "dmt", "total_answered": 302, "options": [{"label": "Strongly Agree", "count": 144, "pct": 47.7}, {"label": "Agree", "count": 111, "pct": 36.8}, {"label": "Disagree", "count": 24, "pct": 7.9}, {"label": "Strongly Disagree", "count": 22, "pct": 7.3}, {"label": "No Response / Skipped", "count": 1, "pct": 0.3}]}, {"q_num": 4, "col_idx": 5, "short_title": "DMT: Ensures Support Alignment", "full_question": "Please indicate your level of agreement with each of the following: The Decision-Making Tool helps teams ensure alignment between supports for instruction and assessment.", "cat_name": "Decision-Making Tool", "cat_id": "dmt", "total_answered": 302, "options": [{"label": "Strongly Agree", "count": 109, "pct": 36.1}, {"label": "Agree", "count": 98, "pct": 32.5}, {"label": "Disagree", "count": 52, "pct": 17.2}, {"label": "Strongly Disagree", "count": 42, "pct": 13.9}, {"label": "No Response / Skipped", "count": 1, "pct": 0.3}]}, {"q_num": 5, "col_idx": 6, "short_title": "DMT: Annual Evaluation Value", "full_question": "Please indicate your level of agreement with each of the following: Annual evaluation of student needs using the Decision-Making Tool is helpful in assuring that each student is taught and assessed appropriately.", "cat_name": "Decision-Making Tool", "cat_id": "dmt", "total_answered": 302, "options": [{"label": "Strongly Agree", "count": 101, "pct": 33.4}, {"label": "Agree", "count": 100, "pct": 33.1}, {"label": "Disagree", "count": 56, "pct": 18.5}, {"label": "Strongly Disagree", "count": 45, "pct": 14.9}]}, {"q_num": 6, "col_idx": 7, "short_title": "DMT: Clarity & Understandability", "full_question": "Please indicate your level of agreement with each of the following: The parts and questions in the Decision-Making Tool are clear and easily understood.", "cat_name": "Decision-Making Tool", "cat_id": "dmt", "total_answered": 302, "options": [{"label": "Agree", "count": 127, "pct": 42.1}, {"label": "Strongly Agree", "count": 93, "pct": 30.8}, {"label": "Disagree", "count": 47, "pct": 15.6}, {"label": "Strongly Disagree", "count": 32, "pct": 10.6}, {"label": "No Response / Skipped", "count": 3, "pct": 1.0}]}]}, {"cat_id": "training", "cat_name": "Training & Communication", "questions": [{"q_num": 7, "col_idx": 8, "short_title": "Training Types Received", "full_question": "Please indicate below what type(s) of training you received for the AASCD during the 2025-2026 school year. ", "cat_name": "Training & Communication", "cat_id": "training", "total_answered": 302, "options": [{"label": "I completed the AASCD Test Administration Certification Course on the Test Portal.", "count": 229, "pct": 75.8}, {"label": "I reviewed the AASCD Online Practice Test Guidance Document and/or the AASCD Student/TA Practice Site.", "count": 114, "pct": 37.7}, {"label": "I received training from administrators in my district or building.", "count": 40, "pct": 13.2}, {"label": "N/A (I did not administer the AASCD)", "count": 37, "pct": 12.3}, {"label": "I received training from a regional support agency (i.e., State Support Team, Educational Service Centers, etc.).", "count": 20, "pct": 6.6}, {"label": "l administered the AASCD but did not receive any training this year.", "count": 11, "pct": 3.6}, {"label": "I have administered the AASCD for years, but this year have k-1 and have not admin it this school year.", "count": 1, "pct": 0.3}, {"label": "No Response / Skipped", "count": 1, "pct": 0.3}, {"label": "I have taken the traning for the past 16 years", "count": 1, "pct": 0.3}, {"label": "I wasn't administering the AASCD this year. I was part of the IEP team using the decision-making tool.", "count": 1, "pct": 0.3}, {"label": "I did not administer, but I am the district administrator.", "count": 1, "pct": 0.3}, {"label": "Received training, did not proctor as we do not have any students taking this test.", "count": 1, "pct": 0.3}, {"label": "I have 5 second graders 4 of which will have to be subjected to the general assessment next year", "count": 1, "pct": 0.3}, {"label": "I did administer it with online training", "count": 1, "pct": 0.3}, {"label": "Our school is a private Chartered non-public school and we have not had this population enrolled for many years", "count": 1, "pct": 0.3}, {"label": "25 years experience of teaching students from severe disabilities to LD.", "count": 1, "pct": 0.3}, {"label": "Training from district testing office", "count": 1, "pct": 0.3}]}, {"q_num": 8, "col_idx": 9, "short_title": "Training Preparation Rating (1-5)", "full_question": "On a scale of 1-5,\u00a0with 5 being the best, please rate how well the training prepared you to administer the AASCD.", "cat_name": "Training & Communication", "cat_id": "training", "total_answered": 302, "options": [{"label": "5.0", "count": 132, "pct": 43.7}, {"label": "4.0", "count": 91, "pct": 30.1}, {"label": "3.0", "count": 47, "pct": 15.6}, {"label": "No Response / Skipped", "count": 21, "pct": 7.0}, {"label": "2.0", "count": 7, "pct": 2.3}, {"label": "1.0", "count": 4, "pct": 1.3}]}, {"q_num": 9, "col_idx": 10, "short_title": "Primary Info & Communication Channels", "full_question": "What are the primary ways you received information regarding the AASCD administration? ", "cat_name": "Training & Communication", "cat_id": "training", "total_answered": 302, "options": [{"label": "Alternate Assessment Portal", "count": 190, "pct": 62.9}, {"label": "District and/or School Administrators", "count": 181, "pct": 59.9}, {"label": "Ohio Help Desk Email Blasts", "count": 75, "pct": 24.8}, {"label": "District Test Coordinator Newsletter", "count": 60, "pct": 19.9}, {"label": "Ohio Ed Updates Emails (EdConnection)", "count": 45, "pct": 14.9}, {"label": "State Support Teams and/or Educational Service Centers", "count": 33, "pct": 10.9}, {"label": "District Test coordinator emails/trainings", "count": 1, "pct": 0.3}, {"label": "Coordinator in our special education department", "count": 1, "pct": 0.3}, {"label": "N/A (I did not administer)", "count": 1, "pct": 0.3}, {"label": "school testing coordinator and counselor", "count": 1, "pct": 0.3}, {"label": "na did not give this year", "count": 1, "pct": 0.3}, {"label": "district testing coordinator for clarification especially with paper testing", "count": 1, "pct": 0.3}, {"label": "Experience", "count": 1, "pct": 0.3}, {"label": "practical experience of giving a variety of alternative, modified, standardize tests, and at one point in my career ETR assessments for IQ, and adaptive behavior over the course of 25 years.", "count": 1, "pct": 0.3}]}]}, {"cat_id": "admin", "cat_name": "Test Admin & Navigation", "questions": [{"q_num": 10, "col_idx": 11, "short_title": "Ease of Use: Maintaining test security", "full_question": "Please rate each of the following according to their ease of use..Maintaining test security", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "Easy", "count": 253, "pct": 83.8}, {"label": "Neutral", "count": 26, "pct": 8.6}, {"label": "No Response / Skipped", "count": 22, "pct": 7.3}, {"label": "Difficult", "count": 1, "pct": 0.3}]}, {"q_num": 11, "col_idx": 12, "short_title": "Ease of Use: Pre-identifying students in TIDE", "full_question": "Please rate each of the following according to their ease of use..Pre-identifying students in TIDE", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "Easy", "count": 160, "pct": 53.0}, {"label": "Neutral", "count": 68, "pct": 22.5}, {"label": "No Response / Skipped", "count": 61, "pct": 20.2}, {"label": "Difficult", "count": 13, "pct": 4.3}]}, {"q_num": 12, "col_idx": 13, "short_title": "Ease of Use: Preparing technology for online testing", "full_question": "Please rate each of the following according to their ease of use..Preparing technology for online testing", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "Easy", "count": 193, "pct": 63.9}, {"label": "Neutral", "count": 59, "pct": 19.5}, {"label": "No Response / Skipped", "count": 38, "pct": 12.6}, {"label": "Difficult", "count": 12, "pct": 4.0}]}, {"q_num": 13, "col_idx": 14, "short_title": "Ease of Use: Navigating the Test Administrator Interface", "full_question": "Please rate each of the following according to their ease of use..Navigating the Test Administrator Interface", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "Easy", "count": 219, "pct": 72.5}, {"label": "Neutral", "count": 52, "pct": 17.2}, {"label": "No Response / Skipped", "count": 25, "pct": 8.3}, {"label": "Difficult", "count": 6, "pct": 2.0}]}, {"q_num": 14, "col_idx": 15, "short_title": "Ease of Use: Navigating the Response Entry", "full_question": "Please rate each of the following according to their ease of use..Navigating the Response Entry", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "Easy", "count": 207, "pct": 68.5}, {"label": "Neutral", "count": 50, "pct": 16.6}, {"label": "No Response / Skipped", "count": 35, "pct": 11.6}, {"label": "Difficult", "count": 10, "pct": 3.3}]}, {"q_num": 15, "col_idx": 16, "short_title": "Ease of Use: Marking Student Test Settings and Tools", "full_question": "Please rate each of the following according to their ease of use..Marking Student Test Settings and Tools", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "Easy", "count": 186, "pct": 61.6}, {"label": "Neutral", "count": 67, "pct": 22.2}, {"label": "No Response / Skipped", "count": 37, "pct": 12.3}, {"label": "Difficult", "count": 12, "pct": 4.0}]}, {"q_num": 16, "col_idx": 17, "short_title": "Ease of Use: Navigating the Student Interface", "full_question": "Please rate each of the following according to their ease of use..Navigating the Student Interface", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "Easy", "count": 208, "pct": 68.9}, {"label": "Neutral", "count": 55, "pct": 18.2}, {"label": "No Response / Skipped", "count": 29, "pct": 9.6}, {"label": "Difficult", "count": 10, "pct": 3.3}]}, {"q_num": 17, "col_idx": 18, "short_title": "Online vs. Paper Ease Comparison", "full_question": "Please rate the ease of conducting the online AASCD in comparison to full paper testing..Select one:", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "The online version is easier", "count": 159, "pct": 52.6}, {"label": "No basis to compare", "count": 93, "pct": 30.8}, {"label": "No difference", "count": 27, "pct": 8.9}, {"label": "The full paper version is easier", "count": 19, "pct": 6.3}, {"label": "No Response / Skipped", "count": 4, "pct": 1.3}]}, {"q_num": 18, "col_idx": 19, "short_title": "Independent Student Navigation Frequency", "full_question": "How often were your students able to navigate the student interface on their own?", "cat_name": "Test Admin & Navigation", "cat_id": "admin", "total_answered": 302, "options": [{"label": "Sometimes", "count": 141, "pct": 46.7}, {"label": "Never", "count": 127, "pct": 42.1}, {"label": "Always", "count": 24, "pct": 7.9}, {"label": "No Response / Skipped", "count": 10, "pct": 3.3}]}]}, {"cat_id": "usage", "cat_name": "Tool Usage Frequency", "questions": [{"q_num": 19, "col_idx": 20, "short_title": "Usage Frequency: Calculator", "full_question": "please rate how often the following test settings and tools were accessed..Calculator", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 167, "pct": 55.3}, {"label": "Rarely", "count": 67, "pct": 22.2}, {"label": "Frequently", "count": 40, "pct": 13.2}, {"label": "No Response / Skipped", "count": 28, "pct": 9.3}]}, {"q_num": 20, "col_idx": 21, "short_title": "Usage Frequency: Expand Passage", "full_question": "please rate how often the following test settings and tools were accessed..Expand Passage", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 133, "pct": 44.0}, {"label": "Rarely", "count": 81, "pct": 26.8}, {"label": "Frequently", "count": 61, "pct": 20.2}, {"label": "No Response / Skipped", "count": 27, "pct": 8.9}]}, {"q_num": 21, "col_idx": 22, "short_title": "Usage Frequency: Highlighter", "full_question": "please rate how often the following test settings and tools were accessed..Highlighter", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 185, "pct": 61.3}, {"label": "Rarely", "count": 63, "pct": 20.9}, {"label": "No Response / Skipped", "count": 29, "pct": 9.6}, {"label": "Frequently", "count": 25, "pct": 8.3}]}, {"q_num": 22, "col_idx": 23, "short_title": "Usage Frequency: Inverted Color Settings", "full_question": "please rate how often the following test settings and tools were accessed..\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0 Inverted Color Settings\u00a0 ", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 206, "pct": 68.2}, {"label": "Rarely", "count": 53, "pct": 17.5}, {"label": "No Response / Skipped", "count": 28, "pct": 9.3}, {"label": "Frequently", "count": 15, "pct": 5.0}]}, {"q_num": 23, "col_idx": 24, "short_title": "Usage Frequency: Color Choice", "full_question": "please rate how often the following test settings and tools were accessed..Color Choice", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 212, "pct": 70.2}, {"label": "Rarely", "count": 52, "pct": 17.2}, {"label": "No Response / Skipped", "count": 28, "pct": 9.3}, {"label": "Frequently", "count": 10, "pct": 3.3}]}, {"q_num": 24, "col_idx": 25, "short_title": "Usage Frequency: Line Reader", "full_question": "please rate how often the following test settings and tools were accessed..Line Reader", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 146, "pct": 48.3}, {"label": "Frequently", "count": 65, "pct": 21.5}, {"label": "Rarely", "count": 63, "pct": 20.9}, {"label": "No Response / Skipped", "count": 28, "pct": 9.3}]}, {"q_num": 25, "col_idx": 26, "short_title": "Usage Frequency: Mark as No Response", "full_question": "please rate how often the following test settings and tools were accessed..Mark as No Response", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 134, "pct": 44.4}, {"label": "Rarely", "count": 78, "pct": 25.8}, {"label": "Frequently", "count": 62, "pct": 20.5}, {"label": "No Response / Skipped", "count": 28, "pct": 9.3}]}, {"q_num": 26, "col_idx": 27, "short_title": "Usage Frequency: Masking", "full_question": "please rate how often the following test settings and tools were accessed..Masking", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 211, "pct": 69.9}, {"label": "Rarely", "count": 49, "pct": 16.2}, {"label": "No Response / Skipped", "count": 31, "pct": 10.3}, {"label": "Frequently", "count": 11, "pct": 3.6}]}, {"q_num": 27, "col_idx": 28, "short_title": "Usage Frequency: Notes", "full_question": "please rate how often the following test settings and tools were accessed..Notes", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 224, "pct": 74.2}, {"label": "Rarely", "count": 41, "pct": 13.6}, {"label": "No Response / Skipped", "count": 29, "pct": 9.6}, {"label": "Frequently", "count": 8, "pct": 2.6}]}, {"q_num": 28, "col_idx": 29, "short_title": "Usage Frequency: Strikethrough", "full_question": "please rate how often the following test settings and tools were accessed..Strikethrough", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 219, "pct": 72.5}, {"label": "Rarely", "count": 43, "pct": 14.2}, {"label": "No Response / Skipped", "count": 33, "pct": 10.9}, {"label": "Frequently", "count": 7, "pct": 2.3}]}, {"q_num": 29, "col_idx": 30, "short_title": "Usage Frequency: Text-to-Speech Tracking", "full_question": "please rate how often the following test settings and tools were accessed..Text-to-Speech Tracking", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 123, "pct": 40.7}, {"label": "Frequently", "count": 93, "pct": 30.8}, {"label": "Rarely", "count": 58, "pct": 19.2}, {"label": "No Response / Skipped", "count": 28, "pct": 9.3}]}, {"q_num": 30, "col_idx": 31, "short_title": "Usage Frequency: Zoom In/Zoom Out", "full_question": "please rate how often the following test settings and tools were accessed..Zoom In/Zoom Out", "cat_name": "Tool Usage Frequency", "cat_id": "usage", "total_answered": 302, "options": [{"label": "Never", "count": 162, "pct": 53.6}, {"label": "Rarely", "count": 69, "pct": 22.8}, {"label": "Frequently", "count": 42, "pct": 13.9}, {"label": "No Response / Skipped", "count": 29, "pct": 9.6}]}]}, {"cat_id": "quality", "cat_name": "Tool Quality Rating", "questions": [{"q_num": 31, "col_idx": 32, "short_title": "Quality Rating: Calculator", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Calculator", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 181, "pct": 59.9}, {"label": "Neutral", "count": 86, "pct": 28.5}, {"label": "High Quality", "count": 25, "pct": 8.3}, {"label": "Low Quality", "count": 10, "pct": 3.3}]}, {"q_num": 32, "col_idx": 33, "short_title": "Quality Rating: Expand Passage", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Expand Passage", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 153, "pct": 50.7}, {"label": "Neutral", "count": 91, "pct": 30.1}, {"label": "High Quality", "count": 46, "pct": 15.2}, {"label": "Low Quality", "count": 12, "pct": 4.0}]}, {"q_num": 33, "col_idx": 34, "short_title": "Quality Rating: Highlighter", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Highlighter", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 185, "pct": 61.3}, {"label": "Neutral", "count": 80, "pct": 26.5}, {"label": "High Quality", "count": 28, "pct": 9.3}, {"label": "Low Quality", "count": 9, "pct": 3.0}]}, {"q_num": 34, "col_idx": 35, "short_title": "Quality Rating: Inverted Color Settings", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0 Inverted Color Settings\u00a0 ", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 200, "pct": 66.2}, {"label": "Neutral", "count": 72, "pct": 23.8}, {"label": "High Quality", "count": 21, "pct": 7.0}, {"label": "Low Quality", "count": 9, "pct": 3.0}]}, {"q_num": 35, "col_idx": 36, "short_title": "Quality Rating: Color Choice", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Color Choice", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 196, "pct": 64.9}, {"label": "Neutral", "count": 72, "pct": 23.8}, {"label": "High Quality", "count": 24, "pct": 7.9}, {"label": "Low Quality", "count": 10, "pct": 3.3}]}, {"q_num": 36, "col_idx": 37, "short_title": "Quality Rating: Line Reader", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Line Reader", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 157, "pct": 52.0}, {"label": "Neutral", "count": 84, "pct": 27.8}, {"label": "High Quality", "count": 48, "pct": 15.9}, {"label": "Low Quality", "count": 13, "pct": 4.3}]}, {"q_num": 37, "col_idx": 38, "short_title": "Quality Rating: Mark as No Response", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Mark as No Response", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 155, "pct": 51.3}, {"label": "Neutral", "count": 94, "pct": 31.1}, {"label": "High Quality", "count": 46, "pct": 15.2}, {"label": "Low Quality", "count": 7, "pct": 2.3}]}, {"q_num": 38, "col_idx": 39, "short_title": "Quality Rating: Masking", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Masking", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 201, "pct": 66.6}, {"label": "Neutral", "count": 73, "pct": 24.2}, {"label": "High Quality", "count": 19, "pct": 6.3}, {"label": "Low Quality", "count": 9, "pct": 3.0}]}, {"q_num": 39, "col_idx": 40, "short_title": "Quality Rating: Notes", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Notes", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 208, "pct": 68.9}, {"label": "Neutral", "count": 69, "pct": 22.8}, {"label": "High Quality", "count": 18, "pct": 6.0}, {"label": "Low Quality", "count": 7, "pct": 2.3}]}, {"q_num": 40, "col_idx": 41, "short_title": "Quality Rating: Strikethrough", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Strikethrough", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 206, "pct": 68.2}, {"label": "Neutral", "count": 68, "pct": 22.5}, {"label": "High Quality", "count": 21, "pct": 7.0}, {"label": "Low Quality", "count": 7, "pct": 2.3}]}, {"q_num": 41, "col_idx": 42, "short_title": "Quality Rating: Text-to-Speech", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Text-to-Speech", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 115, "pct": 38.1}, {"label": "Neutral", "count": 83, "pct": 27.5}, {"label": "High Quality", "count": 77, "pct": 25.5}, {"label": "Low Quality", "count": 27, "pct": 8.9}]}, {"q_num": 42, "col_idx": 43, "short_title": "Quality Rating: Text-to-Speech Tracking", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Text-to-Speech Tracking", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 145, "pct": 48.0}, {"label": "Neutral", "count": 91, "pct": 30.1}, {"label": "High Quality", "count": 52, "pct": 17.2}, {"label": "Low Quality", "count": 14, "pct": 4.6}]}, {"q_num": 43, "col_idx": 44, "short_title": "Quality Rating: Zoom In/Zoom Out", "full_question": "Please rate the quality of the following test settings and tools for the AASCD. .Zoom In/Zoom Out", "cat_name": "Tool Quality Rating", "cat_id": "quality", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 167, "pct": 55.3}, {"label": "Neutral", "count": 82, "pct": 27.2}, {"label": "High Quality", "count": 42, "pct": 13.9}, {"label": "Low Quality", "count": 11, "pct": 3.6}]}]}, {"cat_id": "tool_ease", "cat_name": "Tool Ease of Use", "questions": [{"q_num": 44, "col_idx": 45, "short_title": "Admin Tool Ease: Calculator", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Calculator", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 172, "pct": 57.0}, {"label": "Neutral", "count": 62, "pct": 20.5}, {"label": "Easy", "count": 53, "pct": 17.5}, {"label": "Difficult", "count": 15, "pct": 5.0}]}, {"q_num": 45, "col_idx": 46, "short_title": "Admin Tool Ease: Expand Passage", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Expand Passage", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 156, "pct": 51.7}, {"label": "Neutral", "count": 71, "pct": 23.5}, {"label": "Easy", "count": 66, "pct": 21.9}, {"label": "Difficult", "count": 9, "pct": 3.0}]}, {"q_num": 46, "col_idx": 47, "short_title": "Admin Tool Ease: Highlighter", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Highlighter", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 184, "pct": 60.9}, {"label": "Neutral", "count": 59, "pct": 19.5}, {"label": "Easy", "count": 46, "pct": 15.2}, {"label": "Difficult", "count": 13, "pct": 4.3}]}, {"q_num": 47, "col_idx": 48, "short_title": "Admin Tool Ease: Line Reader", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Line Reader", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 167, "pct": 55.3}, {"label": "Easy", "count": 65, "pct": 21.5}, {"label": "Neutral", "count": 58, "pct": 19.2}, {"label": "Difficult", "count": 12, "pct": 4.0}]}, {"q_num": 48, "col_idx": 49, "short_title": "Admin Tool Ease: Mark as No Response", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Mark as No Response", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 161, "pct": 53.3}, {"label": "Easy", "count": 67, "pct": 22.2}, {"label": "Neutral", "count": 62, "pct": 20.5}, {"label": "Difficult", "count": 12, "pct": 4.0}]}, {"q_num": 49, "col_idx": 50, "short_title": "Admin Tool Ease: Masking", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Masking", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 198, "pct": 65.6}, {"label": "Neutral", "count": 63, "pct": 20.9}, {"label": "Easy", "count": 29, "pct": 9.6}, {"label": "Difficult", "count": 12, "pct": 4.0}]}, {"q_num": 50, "col_idx": 51, "short_title": "Admin Tool Ease: Notes", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Notes", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 205, "pct": 67.9}, {"label": "Neutral", "count": 56, "pct": 18.5}, {"label": "Easy", "count": 28, "pct": 9.3}, {"label": "Difficult", "count": 13, "pct": 4.3}]}, {"q_num": 51, "col_idx": 52, "short_title": "Admin Tool Ease: Strikethrough", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Strikethrough", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 204, "pct": 67.5}, {"label": "Neutral", "count": 55, "pct": 18.2}, {"label": "Easy", "count": 30, "pct": 9.9}, {"label": "Difficult", "count": 13, "pct": 4.3}]}, {"q_num": 52, "col_idx": 53, "short_title": "Admin Tool Ease: Text-to-Speech", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Text-to-Speech", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 119, "pct": 39.4}, {"label": "Easy", "count": 109, "pct": 36.1}, {"label": "Neutral", "count": 63, "pct": 20.9}, {"label": "Difficult", "count": 11, "pct": 3.6}]}, {"q_num": 53, "col_idx": 54, "short_title": "Admin Tool Ease: Text-to-Speech Tracking", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Text-to-Speech Tracking", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 150, "pct": 49.7}, {"label": "Easy", "count": 77, "pct": 25.5}, {"label": "Neutral", "count": 64, "pct": 21.2}, {"label": "Difficult", "count": 11, "pct": 3.6}]}, {"q_num": 54, "col_idx": 55, "short_title": "Admin Tool Ease: Zoom In/Zoom Out", "full_question": "During administration, please rate the ease of use of the following test settings and tools..Zoom In/Zoom Out", "cat_name": "Tool Ease of Use", "cat_id": "tool_ease", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 168, "pct": 55.6}, {"label": "Neutral", "count": 62, "pct": 20.5}, {"label": "Easy", "count": 61, "pct": 20.2}, {"label": "Difficult", "count": 11, "pct": 3.6}]}]}, {"cat_id": "accommodations", "cat_name": "AT & Accommodations", "questions": [{"q_num": 55, "col_idx": 56, "short_title": "Assistive Technology (AT) Used", "full_question": "Did your students use any Assistive Technology (AT) and/or device during the AASCD?", "cat_name": "AT & Accommodations", "cat_id": "accommodations", "total_answered": 302, "options": [{"label": "Yes", "count": 156, "pct": 51.7}, {"label": "No", "count": 129, "pct": 42.7}, {"label": "No Response / Skipped", "count": 17, "pct": 5.6}]}, {"q_num": 56, "col_idx": 57, "short_title": "Non-Embedded Accommodations Used", "full_question": "Did your students use any Non-Embedded Accommodations other than AT devices during the AASCD? Examples include but are not limited to embossed tactile graphics, mathematical tools and dual monitors.", "cat_name": "AT & Accommodations", "cat_id": "accommodations", "total_answered": 302, "options": [{"label": "No", "count": 253, "pct": 83.8}, {"label": "Yes", "count": 25, "pct": 8.3}, {"label": "No Response / Skipped", "count": 24, "pct": 7.9}]}]}, {"cat_id": "resources", "cat_name": "Resources & Manuals", "questions": [{"q_num": 57, "col_idx": 58, "short_title": "Resource Clarity: AASCD Test Administration Manual", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..AASCD Test Administration Manual", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Very Useful  and Clear", "count": 138, "pct": 45.7}, {"label": "Neutral", "count": 111, "pct": 36.8}, {"label": "No Response / Skipped", "count": 39, "pct": 12.9}, {"label": "Not Useful  and Clear", "count": 14, "pct": 4.6}]}, {"q_num": 58, "col_idx": 59, "short_title": "Resource Clarity: AASCD Test Administration Manual Appendix B:\u00a0Accessibility and Accommod", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..AASCD Test Administration Manual Appendix B:\u00a0Accessibility and Accommod", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Very Useful  and Clear", "count": 124, "pct": 41.1}, {"label": "Neutral", "count": 124, "pct": 41.1}, {"label": "No Response / Skipped", "count": 40, "pct": 13.2}, {"label": "Not Useful  and Clear", "count": 14, "pct": 4.6}]}, {"q_num": 59, "col_idx": 60, "short_title": "Resource Clarity: AASCD Test Administration Manual  Appendix H:\u00a0AASCD Guidance for Special", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..AASCD Test Administration Manual  Appendix H:\u00a0AASCD Guidance for Special", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Neutral", "count": 126, "pct": 41.7}, {"label": "Very Useful  and Clear", "count": 100, "pct": 33.1}, {"label": "No Response / Skipped", "count": 64, "pct": 21.2}, {"label": "Not Useful  and Clear", "count": 12, "pct": 4.0}]}, {"q_num": 60, "col_idx": 61, "short_title": "Resource Clarity: AASCD   Supplemental Instructions for Paper Testing      ", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..AASCD   Supplemental Instructions for Paper Testing      ", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "No Response / Skipped", "count": 119, "pct": 39.4}, {"label": "Very Useful  and Clear", "count": 88, "pct": 29.1}, {"label": "Neutral", "count": 84, "pct": 27.8}, {"label": "Not Useful  and Clear", "count": 11, "pct": 3.6}]}, {"q_num": 61, "col_idx": 62, "short_title": "Resource Clarity: AASCD Test Administrator Certification Course", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..AASCD Test Administrator Certification Course", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Very Useful  and Clear", "count": 157, "pct": 52.0}, {"label": "Neutral", "count": 90, "pct": 29.8}, {"label": "No Response / Skipped", "count": 44, "pct": 14.6}, {"label": "Not Useful  and Clear", "count": 11, "pct": 3.6}]}, {"q_num": 62, "col_idx": 63, "short_title": "Resource Clarity: AASCD Test Administrator User Guide", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..AASCD Test Administrator User Guide", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Very Useful  and Clear", "count": 146, "pct": 48.3}, {"label": "Neutral", "count": 104, "pct": 34.4}, {"label": "No Response / Skipped", "count": 42, "pct": 13.9}, {"label": "Not Useful  and Clear", "count": 10, "pct": 3.3}]}, {"q_num": 63, "col_idx": 64, "short_title": "Resource Clarity: Response Entry User Guide", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..Response Entry User Guide", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Very Useful  and Clear", "count": 115, "pct": 38.1}, {"label": "Neutral", "count": 111, "pct": 36.8}, {"label": "No Response / Skipped", "count": 65, "pct": 21.5}, {"label": "Not Useful  and Clear", "count": 11, "pct": 3.6}]}, {"q_num": 64, "col_idx": 65, "short_title": "Resource Clarity: TA Practice Site", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..TA Practice Site", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Very Useful  and Clear", "count": 138, "pct": 45.7}, {"label": "Neutral", "count": 96, "pct": 31.8}, {"label": "No Response / Skipped", "count": 58, "pct": 19.2}, {"label": "Not Useful  and Clear", "count": 10, "pct": 3.3}]}, {"q_num": 65, "col_idx": 66, "short_title": "Resource Clarity: Student Practice Site", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD..Student Practice Site", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Very Useful  and Clear", "count": 118, "pct": 39.1}, {"label": "Neutral", "count": 105, "pct": 34.8}, {"label": "No Response / Skipped", "count": 69, "pct": 22.8}, {"label": "Not Useful  and Clear", "count": 10, "pct": 3.3}]}, {"q_num": 66, "col_idx": 67, "short_title": "Resource Clarity:  AASCD   Practice Site Guidance Document      ", "full_question": "Please rate the usefulness and clarity of the following resources for\u00a0information on the AASCD.. AASCD   Practice Site Guidance Document      ", "cat_name": "Resources & Manuals", "cat_id": "resources", "total_answered": 302, "options": [{"label": "Neutral", "count": 111, "pct": 36.8}, {"label": "Very Useful  and Clear", "count": 104, "pct": 34.4}, {"label": "No Response / Skipped", "count": 76, "pct": 25.2}, {"label": "Not Useful  and Clear", "count": 11, "pct": 3.6}]}]}];
+    const totalRespondents = 302;
+    
+    let activeTab = 'all';
+    let searchQuery = '';
+    const activeCharts = {};
+
+    function setupTabs() {
+      const container = document.getElementById('tabsContainer');
+      
+      categoriesData.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.id = `tab-${cat.cat_id}`;
+        btn.onclick = () => switchTab(cat.cat_id);
+        btn.className = 'tab-btn px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 bg-white hover:bg-slate-50 transition-all flex items-center gap-2 cursor-pointer';
+        btn.innerHTML = `
+          <span>${cat.cat_name}</span>
+          <span class="badge px-2 py-0.5 text-xs rounded-md bg-slate-100 text-slate-600 font-bold">${cat.questions.length}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function switchTab(catId) {
+      activeTab = catId;
+      
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`tab-${catId}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      renderDashboard();
+    }
+
+    function handleSearch() {
+      searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+      renderDashboard();
+    }
+
+    function renderDashboard() {
+      const grid = document.getElementById('dashboardGrid');
+      const noResults = document.getElementById('noResults');
+      
+      Object.keys(activeCharts).forEach(key => {
+        if (activeCharts[key]) {
+          activeCharts[key].destroy();
+          delete activeCharts[key];
         }
+      });
 
-        // Shared Colors
-        const colors = {
-            blue: '#2563eb',
-            teal: '#0d9488',
-            amber: '#f59e0b',
-            red: '#ef4444',
-            purple: '#8b5cf6',
-            gray: '#94a3b8',
-            lightBlue: '#60a5fa'
-        };
+      grid.innerHTML = '';
 
-        // Initialize Charts on Load
-        window.addEventListener('DOMContentLoaded', () => {
+      let questionsToDisplay = [];
 
-            // 1. Overview Role Chart
-            new Chart(document.getElementById('overviewRoleChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Teacher / Test Admin', 'District Coordinator', 'Building Coordinator', 'Other'],
-                    datasets: [{
-                        data: [232, 55, 6, 9],
-                        backgroundColor: [colors.blue, colors.teal, colors.amber, colors.gray]
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+      categoriesData.forEach(cat => {
+        if (activeTab === 'all' || activeTab === cat.cat_id) {
+          cat.questions.forEach(q => {
+            if (!searchQuery || q.short_title.toLowerCase().includes(searchQuery) || q.full_question.toLowerCase().includes(searchQuery) || q.cat_name.toLowerCase().includes(searchQuery)) {
+              questionsToDisplay.push(q);
+            }
+          });
+        }
+      });
 
-            // 2. Overview Task Chart
-            new Chart(document.getElementById('overviewTaskChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['Security', 'TA Interface', 'Response Entry', 'Student Interface', 'Preparing Tech', 'Settings & Tools', 'TIDE Pre-ID'],
-                    datasets: [{
-                        label: '% Rated Easy',
-                        data: [90.4, 79.1, 77.5, 76.2, 73.1, 70.2, 66.4],
-                        backgroundColor: colors.blue
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { max: 100, ticks: { callback: v => v + '%' } } },
-                    plugins: { legend: { display: false } }
-                }
-            });
+      document.getElementById('showingCount').textContent = `Showing ${questionsToDisplay.length} question${questionsToDisplay.length === 1 ? '' : 's'}`;
 
-            // 3. Training Rating Chart
-            new Chart(document.getElementById('trainingRatingChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['5 (Best)', '4', '3', '2', '1 (Worst)'],
-                    datasets: [{
-                        label: 'Respondents',
-                        data: [132, 91, 47, 7, 4],
-                        backgroundColor: [colors.teal, colors.blue, colors.amber, colors.red, colors.red]
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+      if (questionsToDisplay.length === 0) {
+        grid.classList.add('hidden');
+        noResults.classList.remove('hidden');
+        return;
+      } else {
+        grid.classList.remove('hidden');
+        noResults.classList.add('hidden');
+      }
 
-            // 4. Info Channels Chart
-            new Chart(document.getElementById('infoChannelsChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['Assessment Portal', 'District/School Admin', 'Help Desk Blasts', 'DTC Newsletter', 'Ed Updates Email'],
-                    datasets: [{
-                        label: 'Selections',
-                        data: [190, 181, 75, 60, 45],
-                        backgroundColor: colors.teal
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
-            });
+      questionsToDisplay.forEach(qItem => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow";
 
-            // 5. Decision Making Tool Stacked Bar Chart
-            new Chart(document.getElementById('dmtChart'), {
-                type: 'bar',
-                data: {
-                    labels: [
-                        'Determines Eligibility',
-                        'Focuses Criteria',
-                        'Clear Parts/Questions',
-                        'Instruction Alignment',
-                        'Annual Evaluation'
-                    ],
-                    datasets: [
-                        { label: 'Strongly Agree', data: [74.8, 47.8, 31.1, 36.2, 33.4], backgroundColor: '#15803d' },
-                        { label: 'Agree', data: [22.3, 36.9, 42.5, 32.6, 33.1], backgroundColor: '#4ade80' },
-                        { label: 'Disagree', data: [1.7, 8.0, 15.7, 17.3, 18.5], backgroundColor: '#f87171' },
-                        { label: 'Strongly Disagree', data: [1.3, 7.3, 10.7, 14.0, 14.9], backgroundColor: '#dc2626' }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true, max: 100, ticks: { callback: v => v + '%' } }
-                    }
-                }
-            });
+        const canvasId = `chart-${qItem.q_num}`;
 
-            // 6. Usability Tasks Chart
-            new Chart(document.getElementById('usabilityTasksChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['Maintaining Security', 'TA Interface', 'Response Entry', 'Student Interface', 'Preparing Tech', 'Marking Tools', 'TIDE Pre-ID'],
-                    datasets: [{
-                        label: '% Easy',
-                        data: [90.4, 79.1, 77.5, 76.2, 73.1, 70.2, 66.4],
-                        backgroundColor: colors.blue
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { max: 100, ticks: { callback: v => v + '%' } } }
-                }
-            });
-
-            // 7. Paper vs Online Chart
-            new Chart(document.getElementById('paperVsOnlineChart'), {
-                type: 'pie',
-                data: {
-                    labels: ['Online is Easier (53.4%)', 'No Basis to Compare (31.2%)', 'No Difference (9.1%)', 'Paper is Easier (6.4%)'],
-                    datasets: [{
-                        data: [159, 93, 27, 19],
-                        backgroundColor: [colors.blue, colors.gray, colors.amber, colors.red]
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-
-            // 8. Student Independence Chart
-            new Chart(document.getElementById('studentIndependenceChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Sometimes (48.3%)', 'Never (43.5%)', 'Always (8.2%)'],
-                    datasets: [{
-                        data: [141, 127, 24],
-                        backgroundColor: [colors.blue, colors.amber, colors.teal]
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-
-            // 9. Interactive Tools Chart Initialization
-            initToolsChart();
+        let tableRows = '';
+        qItem.options.forEach(opt => {
+          tableRows += `
+            <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors">
+              <td class="py-2.5 px-3 text-slate-700 text-sm font-medium leading-snug">${opt.label}</td>
+              <td class="py-2.5 px-3 text-right font-semibold text-slate-900 text-sm">${opt.count.toLocaleString()}</td>
+              <td class="py-2.5 px-3 text-right font-bold text-blue-600 text-sm">${opt.pct}%</td>
+            </tr>
+          `;
         });
 
-        let toolsChartInstance = null;
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-lg uppercase tracking-wide">
+                  Q${qItem.q_num}
+                </span>
+                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">
+                  ${qItem.cat_name}
+                </span>
+              </div>
+              <span class="text-xs font-medium text-slate-400 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
+                ${qItem.total_answered} Responses
+              </span>
+            </div>
 
-        const toolsData = {
-            frequent: {
-                title: 'Accessibility Tools Access Frequency (% Frequently Used)',
-                labels: ['TTS Tracking', 'Line Reader', 'No Response', 'Expand Passage', 'Zoom In/Out', 'Calculator', 'Highlighter', 'Inverted Color', 'Masking'],
-                data: [33.9, 23.7, 22.6, 22.2, 15.4, 14.6, 9.2, 5.5, 4.1],
-                color: colors.purple
+            <h2 class="text-lg font-bold text-slate-900 leading-snug mb-1">${qItem.short_title}</h2>
+            <p class="text-xs text-slate-500 mb-4 font-normal leading-relaxed">${qItem.full_question}</p>
+
+            <div class="h-60 w-full mb-4 bg-slate-50/50 p-2 rounded-xl border border-slate-100">
+              <canvas id="${canvasId}"></canvas>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl max-h-60">
+              <table class="w-full text-left border-collapse">
+                <thead class="sticky top-0 bg-slate-100/95 backdrop-blur-xs z-10">
+                  <tr class="text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                    <th class="py-2.5 px-3">Option / Category</th>
+                    <th class="py-2.5 px-3 text-right">Count</th>
+                    <th class="py-2.5 px-3 text-right">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+
+        setTimeout(() => {
+          const canvas = document.getElementById(canvasId);
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+
+          const labels = qItem.options.map(o => o.label.length > 25 ? o.label.substring(0, 25) + '...' : o.label);
+          const dataValues = qItem.options.map(o => o.count);
+
+          activeCharts[canvasId] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Respondents',
+                data: dataValues,
+                backgroundColor: 'rgba(37, 99, 235, 0.82)',
+                hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
+                borderRadius: 6
+              }]
             },
-            quality: {
-                title: 'Accessibility Tools Rated High Quality (% High Quality)',
-                labels: ['Text-to-Speech', 'TTS Tracking', 'Line Reader', 'Expand Passage', 'Mark No Response', 'Zoom In/Out', 'Highlighter', 'Calculator', 'Color Choice'],
-                data: [41.2, 32.7, 33.1, 31.1, 31.3, 28.6, 23.9, 20.7, 22.6],
-                color: colors.teal
-            }
-        };
-
-        function initToolsChart() {
-            const ctx = document.getElementById('interactiveToolsChart');
-            toolsChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: toolsData.frequent.labels,
-                    datasets: [{
-                        label: '% Percentage',
-                        data: toolsData.frequent.data,
-                        backgroundColor: toolsData.frequent.color
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { max: 50, ticks: { callback: v => v + '%' } } }
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const val = context.raw;
+                      const pct = ((val / totalRespondents) * 100).toFixed(1);
+                      return ` Count: ${val} (${pct}%)`;
+                    }
+                  }
                 }
-            });
-        }
+              },
+              scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { precision: 0 } },
+                x: { grid: { display: false } }
+              }
+            }
+          });
+        }, 40);
+      });
+    }
 
-        function updateToolsChart() {
-            const metric = document.getElementById('toolMetricSelect').value;
-            const selectedData = toolsData[metric];
-
-            document.getElementById('toolsChartTitle').innerText = selectedData.title;
-            toolsChartInstance.data.labels = selectedData.labels;
-            toolsChartInstance.data.datasets[0].data = selectedData.data;
-            toolsChartInstance.data.datasets[0].backgroundColor = selectedData.color;
-            toolsChartInstance.update();
-        }
-    </script>
+    window.onload = () => {
+      setupTabs();
+      renderDashboard();
+    };
+  </script>
 </body>
 </html>
